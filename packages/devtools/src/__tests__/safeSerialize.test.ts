@@ -135,11 +135,13 @@ describe('safeSerialize edge cases', () => {
         const identifiedElement = document.createElement('span');
         identifiedElement.id = 'result';
         const textNode = document.createTextNode('hello');
+        // Vitest's injected global window does not retain the Window prototype.
+        const windowInstance = Object.create(Window.prototype) as Window;
 
         expect(
             JSON.parse(
                 safeSerialize({
-                    window,
+                    window: windowInstance,
                     plainElement,
                     identifiedElement,
                     textNode,
@@ -256,9 +258,16 @@ describe('safeSerializeCompact edge cases', () => {
         const element = document.createElement('div');
         element.id = 'target';
         const textNode = document.createTextNode('hello');
+        const windowInstance = Object.create(Window.prototype) as Window;
 
         expect(
-            JSON.parse(safeSerializeCompact({ window, element, textNode })),
+            JSON.parse(
+                safeSerializeCompact({
+                    window: windowInstance,
+                    element,
+                    textNode,
+                }),
+            ),
         ).toEqual({
             window: '[Window]',
             element: '[Element]',
