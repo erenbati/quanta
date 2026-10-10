@@ -6,6 +6,7 @@ import {
     logger,
     isNodeEnvironment,
     isBrowserEnvironment,
+    isWebWorkerEnvironment,
 } from '../services/logger-service';
 
 describe('Logger', () => {
@@ -182,6 +183,24 @@ describe('Logger', () => {
         it('should detect browser environment', () => {
             expect(typeof isBrowserEnvironment()).toBe('boolean');
         });
+
+        it('recognizes a worker without window or document globals', () => {
+            vi.stubGlobal('self', {});
+            vi.stubGlobal('window', undefined);
+            vi.stubGlobal('document', undefined);
+            expect(isWebWorkerEnvironment()).toBe(true);
+
+            vi.stubGlobal('window', {});
+            expect(isWebWorkerEnvironment()).toBe(false);
+
+            vi.stubGlobal('window', undefined);
+            vi.stubGlobal('document', {});
+            expect(isWebWorkerEnvironment()).toBe(false);
+
+            vi.stubGlobal('self', undefined);
+            vi.stubGlobal('document', undefined);
+            expect(isWebWorkerEnvironment()).toBe(false);
+        });
     });
 
     describe('fallback behavior', () => {
@@ -208,6 +227,21 @@ describe('Logger', () => {
             expect(formatter.formatMessage(99 as LogLevel, 'unexpected')).toBe(
                 '[LOG] unexpected',
             );
+        });
+
+        it('omits ANSI color for an unknown log level', () => {
+            const colorLogger = new Logger({
+                level: LogLevel.DEBUG,
+                timestamp: false,
+                colors: true,
+            });
+            const formatter = colorLogger as unknown as {
+                formatMessage: (level: LogLevel, message: string) => string;
+            };
+
+            expect(
+                formatter.formatMessage(99 as LogLevel, 'unknown level'),
+            ).toContain('[LOG] unknown level');
         });
 
         it('omits a timestamp if Date.toISOString throws', () => {
