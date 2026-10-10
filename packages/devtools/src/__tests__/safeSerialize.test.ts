@@ -86,7 +86,7 @@ describe('safeSerializeCompact', () => {
 });
 
 describe('safeSerialize edge cases', () => {
-    it('preserves null and primitive values, including undefined markers', () => {
+    it('preserves primitives, null, and undefined markers', () => {
         expect(safeSerialize(null)).toBe('null');
         expect(safeSerialize(undefined)).toBe('"[undefined]"');
         expect(
@@ -130,7 +130,7 @@ describe('safeSerialize edge cases', () => {
         });
     });
 
-    it('serializes window, DOM elements with or without ids, and text nodes', () => {
+    it('serializes windows, DOM elements, and text nodes', () => {
         const plainElement = document.createElement('div');
         const identifiedElement = document.createElement('span');
         identifiedElement.id = 'result';
@@ -153,13 +153,15 @@ describe('safeSerialize edge cases', () => {
         });
     });
 
-    it('handles circular arrays and does not confuse repeated references with cycles', () => {
+    it('handles circular arrays and repeated references', () => {
         const circular: unknown[] = [];
         circular.push(circular);
         const shared = { value: 'ok' };
 
         expect(
-            JSON.parse(safeSerialize({ circular, first: shared, second: shared })),
+            JSON.parse(
+                safeSerialize({ circular, first: shared, second: shared }),
+            ),
         ).toEqual({
             circular: ['[Circular Reference]'],
             first: { value: 'ok' },
@@ -175,10 +177,11 @@ describe('safeSerialize edge cases', () => {
     });
 
     it('marks a sibling as exceeding the length limit', () => {
-        expect(JSON.parse(safeSerialize({ first: 'long', second: 'short' }, 10, 1))).toEqual({
-            first: 'long',
-            second: '[Max Length Exceeded]',
-        });
+        expect(
+            JSON.parse(
+                safeSerialize({ first: 'long', second: 'short' }, 10, 1),
+            ),
+        ).toEqual({ first: 'long', second: '[Max Length Exceeded]' });
     });
 
     it('reports thrown getters and non-Error failures', () => {
@@ -193,8 +196,12 @@ describe('safeSerialize edge cases', () => {
             },
         };
 
-        expect(safeSerialize(throwsError)).toBe('[Serialization Error: getter failed]');
-        expect(safeSerialize(throwsString)).toBe('[Serialization Error: Unknown]');
+        expect(safeSerialize(throwsError)).toBe(
+            '[Serialization Error: getter failed]',
+        );
+        expect(safeSerialize(throwsString)).toBe(
+            '[Serialization Error: Unknown]',
+        );
     });
 
     it('reports invalid dates that cannot be converted to ISO strings', () => {
@@ -205,12 +212,14 @@ describe('safeSerialize edge cases', () => {
 });
 
 describe('safeSerializeCompact edge cases', () => {
-    it('handles top-level null and undefined and omits undefined object values', () => {
+    it('handles null, undefined, and omitted object values', () => {
         expect(safeSerializeCompact(null)).toBe('null');
         expect(safeSerializeCompact(undefined)).toBeUndefined();
-        expect(JSON.parse(safeSerializeCompact({ empty: undefined, enabled: true }))).toEqual({
-            enabled: true,
-        });
+        expect(
+            JSON.parse(
+                safeSerializeCompact({ empty: undefined, enabled: true }),
+            ),
+        ).toEqual({ enabled: true });
     });
 
     it('serializes primitives, functions, symbols, and bigint values', () => {
@@ -281,7 +290,9 @@ describe('safeSerializeCompact edge cases', () => {
         const object = Object.create({ inherited: 'skip' });
         object.own = 'keep';
 
-        expect(JSON.parse(safeSerializeCompact(object))).toEqual({ own: 'keep' });
+        expect(JSON.parse(safeSerializeCompact(object))).toEqual({
+            own: 'keep',
+        });
     });
 
     it('serializes Date and RegExp values', () => {
